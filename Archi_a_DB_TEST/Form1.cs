@@ -18,11 +18,22 @@ namespace Archi_a_DB_TEST
         public Boolean formatoCorrectoBool;
         public Boolean ArchivoCorrectoBool;
         List<LightningStrike> listaRayos;
+        int NumFilas = 0;
+
+        // private FormEjecutando childForm;
 
         public Form1()
         {
             InitializeComponent();
             listaRayos = new List<LightningStrike>();
+            pb_completado.Visible = false;
+
+            backgroundWorker1.WorkerReportsProgress = true;
+            backgroundWorker1.WorkerSupportsCancellation = true;
+
+            //pb_completado.Maximum = listaRayos.Count;
+            pb_completado.Step = 1;
+            pb_completado.Value = 0;
             pb_completado.Visible = false;
         }
 
@@ -32,6 +43,9 @@ namespace Archi_a_DB_TEST
             var filePath = string.Empty;
             string log = "";
             int counter = 0;
+            NumFilas = 0;
+
+
             listaRayos.Clear();
 
 
@@ -64,7 +78,7 @@ namespace Archi_a_DB_TEST
                         string[] lineasArchivo = fileContent.Split("\r\n".ToCharArray(), StringSplitOptions.RemoveEmptyEntries);
 
                         counter = 0;
-
+                        
 
                         foreach (String linea in lineasArchivo)
                         { 
@@ -141,6 +155,8 @@ namespace Archi_a_DB_TEST
                             counter++;
                         }
 
+                        NumFilas = listaRayos.Count -1;
+
 
                     }
                 }
@@ -176,48 +192,89 @@ namespace Archi_a_DB_TEST
 
         private void btn_connect_Click(object sender, EventArgs e)
         {
-            if (ArchivoCorrectoBool)
-            {
-                string connetionString = null;
-                SqlConnection cnn;
-                connetionString = "Data Source=192.168.4.2;Initial Catalog=LightningStrikes;User ID=jorge;Password=ERR100189";
-                cnn = new SqlConnection(connetionString);
-                pb_completado.Maximum = listaRayos.Count;
-                pb_completado.Step = 1;
-                pb_completado.Value = 0;
-                pb_completado.Visible = true;
-                int i = 0;
+            pb_completado.Visible = true;
+            btn_connect.Enabled = false;
+            btn_leer.Enabled = false;
 
-                try
-                {
-                    cnn.Open();
-                    foreach (LightningStrike lightning in listaRayos)
-                    {
-                        i++;
-                        SqlCommand cmd = new SqlCommand("InsertLightning", cnn);
-                        cmd.CommandType = CommandType.StoredProcedure;
-                        cmd.Parameters.AddWithValue("@fechaHora", lightning.FechaHora);
-                        cmd.Parameters.AddWithValue("@latitud", lightning.latitud);
-                        cmd.Parameters.AddWithValue("@longitud", lightning.longitud);
-                        cmd.ExecuteNonQuery();
 
-                        pb_completado.Value = i;
-                    
-                    }
-                    cnn.Close();
-                    pb_completado.Visible = false;
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show("Can not open connection ! \r\n" + ex.ToString());
-                }
-            }
-            else
+
+            if (backgroundWorker1.IsBusy != true)
             {
-                MessageBox.Show("Archivo Incorrecto", "Error");
+                // Start the asynchronous operation.
+                backgroundWorker1.RunWorkerAsync();
             }
         }
 
 
+
+        private void backgroundWorker1_DoWork(object sender, DoWorkEventArgs e)
+        {
+            BackgroundWorker worker = sender as BackgroundWorker;
+            int j = 0;
+
+            if (ArchivoCorrectoBool)
+                    {
+                        string connetionString = null;
+                        SqlConnection cnn;
+                        connetionString = "Data Source=192.168.4.2;Initial Catalog=LightningStrikes;User ID=jorge;Password=ERR100189";
+                        cnn = new SqlConnection(connetionString);
+                        try
+                        {
+                            cnn.Open();
+                            foreach (LightningStrike lightning in listaRayos)
+                            {
+                                j++;
+                                SqlCommand cmd = new SqlCommand("InsertLightning", cnn);
+                                cmd.CommandType = CommandType.StoredProcedure;
+                                cmd.Parameters.AddWithValue("@fechaHora", lightning.FechaHora);
+                                cmd.Parameters.AddWithValue("@latitud", lightning.latitud);
+                                cmd.Parameters.AddWithValue("@longitud", lightning.longitud);
+                                cmd.ExecuteNonQuery();
+
+                                backgroundWorker1.ReportProgress( j * 100 / NumFilas);
+
+                            }
+                            cnn.Close();
+                            
+                            MessageBox.Show("Archivo Cargado Correctamente", "Cargado");
+                        }
+                        catch (Exception ex)
+                        {
+                            MessageBox.Show("Can not open connection ! \r\n" + ex.ToString());
+                        }
+                    }
+                    else
+                    {
+                        MessageBox.Show("Archivo Incorrecto", "Error");
+                    }
+
+
+                    System.Threading.Thread.Sleep(500);
+
+        }
+
+        private void backgroundWorker1_ProgressChanged(object sender, ProgressChangedEventArgs e)
+        {
+            pb_completado.Value = e.ProgressPercentage;
+            //label3.Text = (e.ProgressPercentage.ToString() + "%");
+        }
+
+        private void backgroundWorker1_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
+        {
+            if (e.Cancelled == true)
+            {
+                label3.Text = "Canceled!";
+            }
+            else if (e.Error != null)
+            {
+                label3.Text = "Error: " + e.Error.Message;
+            }
+            else
+            {
+                pb_completado.Visible = false;
+                btn_connect.Enabled = true;
+                btn_leer.Enabled = true;
+            }
+        }
     }
 }
