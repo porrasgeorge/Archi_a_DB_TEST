@@ -27,6 +27,8 @@ namespace Archi_a_DB_TEST
             InitializeComponent();
             listaRayos = new List<LightningStrike>();
             pb_completado.Visible = false;
+            btn_leer.Enabled = true;
+            btn_connect.Enabled = false;
 
             backgroundWorker1.WorkerReportsProgress = true;
             backgroundWorker1.WorkerSupportsCancellation = true;
@@ -166,7 +168,7 @@ namespace Archi_a_DB_TEST
                     log += "\r\nFormato Correcto\r\n";
                     log += Convert.ToString(listaRayos.Count) + " lineas Correctas\r\n";
                     log += Convert.ToString(counter - listaRayos.Count -1) + " lineas Incorrectas\r\n";
-
+                    btn_connect.Enabled = true;
 
                 }
 
@@ -272,7 +274,7 @@ namespace Archi_a_DB_TEST
             else
             {
                 pb_completado.Visible = false;
-                btn_connect.Enabled = true;
+                btn_connect.Enabled = false;
                 btn_leer.Enabled = true;
             }
         }
