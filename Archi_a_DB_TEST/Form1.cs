@@ -90,13 +90,21 @@ namespace Archi_a_DB_TEST
                                 {
                                     string[] columnas = linea.Split(",".ToCharArray());
 
-                                    DateTime Fecha;
+                                    DateTime Fecha = DateTime.Parse("2000-01-01");
                                     double latitud = 0.0;
                                     double longitud = 0.0;
 
-                                    bool Fecha_Ok = DateTime.TryParse(columnas[0], out Fecha);
-                                    bool latitud_OK = Double.TryParse(columnas[1], out latitud);
-                                    bool longitud_OK = Double.TryParse(columnas[2], out longitud);
+                                    bool Fecha_Ok = false;
+                                    bool latitud_OK = false;
+                                    bool longitud_OK = false;
+                                    
+
+                                    if (columnas.Length > 3)
+                                    {
+                                        Fecha_Ok = DateTime.TryParse(columnas[0], out Fecha);
+                                        latitud_OK = Double.TryParse(columnas[1], out latitud);
+                                        longitud_OK = Double.TryParse(columnas[2], out longitud);
+                                    }
 
                                     if (latitud_OK && longitud_OK && Fecha_Ok)
                                     {
@@ -233,7 +241,7 @@ namespace Archi_a_DB_TEST
                                 cmd.Parameters.AddWithValue("@longitud", lightning.longitud);
                                 cmd.ExecuteNonQuery();
 
-                                backgroundWorker1.ReportProgress( j * 100 / NumFilas);
+                                backgroundWorker1.ReportProgress( j * 100 / NumFilas, new System.Tuple<int>(j));
 
                             }
                             cnn.Close();
@@ -258,7 +266,7 @@ namespace Archi_a_DB_TEST
         private void backgroundWorker1_ProgressChanged(object sender, ProgressChangedEventArgs e)
         {
             pb_completado.Value = e.ProgressPercentage;
-            //label3.Text = (e.ProgressPercentage.ToString() + "%");
+            lbl_progress.Text = e.UserState.ToString();
         }
 
         private void backgroundWorker1_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
